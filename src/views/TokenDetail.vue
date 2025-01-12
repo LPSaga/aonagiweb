@@ -83,7 +83,7 @@
               <button @click="buyOrSellToken(5000)">5000 TRX</button>
             </div>
             
-            <button class="connect-wallet">Connect Wallet</button>
+            <button class="connect-wallet" @click="buyOrSellToken(1)"> {{ activeBuyTab === 'buy' ? 'Sell' : 'Buy'}}</button>
           </div>
 
           <div class="bonding-curve">
@@ -227,7 +227,7 @@
         modal-class="overlay-white"
         class="max-w-[400px] rounded-[20px]"
         width="90%" :show-close="true" align-center destroy-on-close>
-        <BuyAndSellView :token="contract" />
+        <BuyAndSellView :token="userTokenInfo" />
       </el-dialog>
   </div>
 </template>
@@ -240,10 +240,13 @@ import { TokenService } from '../services/tokenService';
 import BuyAndSellView from '@/components/BuyAndSellView.vue'
 import { ref, onMounted } from 'vue'
 
-const showTrading = ref(false);
+// const showTrading = ref(false);
 
 export default {
   name: 'TokenDetail',
+  components: {
+    BuyAndSellView,
+  },
   data() {
     return {
       activeTab: 'comments',
@@ -255,6 +258,8 @@ export default {
       tokenDetail: {},
       klineData: [],
       activeBuyTab: 'buy',
+      showTrading:false,
+      userTokenInfo:{}
     }
   },
   created() {
@@ -263,10 +268,16 @@ export default {
   },
   methods: {
     buyOrSellToken(ammount) {
-      this.selectedToken = this.contract;
-      this.showTrading = true;
-      console.log('buyOrSellToken:', ammount);
+      this.userTokenInfo = {
+        contract: this.contract,
+        supply: 1,
+        balance: 0.00001,
+        ethBalance: 0.00002,
+        listed: false
+      };
+      console.log('buyOrSellToken:', this.userTokenInfo);
 
+      this.showTrading = true;
     },
     toggleTab(tab) {
       console.log('activeBuyTab:', tab);
