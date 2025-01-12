@@ -75,6 +75,7 @@ const create = async () => {
     createLoading.value = true;
 
     // create token
+    console.log('createForm', createForm)
     const {createHash, token} = await createCoin(createForm);
     if (!token) return;
     createForm.createHash = createHash;

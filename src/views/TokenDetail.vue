@@ -26,23 +26,23 @@
         </div>
       </div>
 
-      <div class="token-stats">
+      <div class="token-stats" v-if="tokenDetail">
         <div class="stat-item">
           <div class="label" style="color: #8F85B8;">Price</div>
-          <div class="value" style="color: #FFFFFF;">0.000033 TRX</div>
-          <div class="change negative">-2.95%</div>
+          <div class="value" style="color: #FFFFFF;">{{ tokenDetail.price }} ETH</div>
+          <div class="change negative">0%</div>
         </div>
         <div class="stat-item">
           <div class="label" style="color: #8F85B8;">Market Cap</div>
-          <div class="value" style="color: #FFFFFF;">$10.04k</div>
+          <div class="value" style="color: #FFFFFF;">{{ tokenDetail.price * 1000000000 }} ETH</div>
         </div>
-        <div class="stat-item">
+        <!-- <div class="stat-item">
           <div class="label" style="color: #8F85B8;">Virtual Liquidity</div>
           <div class="value" style="color: #FFFFFF;">$21.19k</div>
-        </div>
+        </div> -->
         <div class="stat-item">
           <div class="label" style="color: #8F85B8;">24H Volume</div>
-          <div class="value" style="color: #FFFFFF;">6,239.73 TRX</div>
+          <div class="value" style="color: #FFFFFF;">6,239.73 ETH</div>
         </div>
       </div>
 
@@ -72,18 +72,18 @@
             </div>
             
             <div class="input-group">
-              <input type="number" placeholder="Enter amount" />
-              <span class="currency">TRX</span>
+              <input type="number" placeholder="Enter amount" v-model="inputEth"/>
+              <span class="currency">ETH</span>
             </div>
             
             <div class="quick-amounts">
-              <button @click="buyOrSellToken(100)">100 TRX</button>
-              <button @click="buyOrSellToken(500)">500 TRX</button>
-              <button @click="buyOrSellToken(1000)">1000 TRX</button>
-              <button @click="buyOrSellToken(5000)">5000 TRX</button>
+              <button @click="buyOrSellToken(0.01)">0.01 ETH</button>
+              <button @click="buyOrSellToken(0.05)">0.05 ETH</button>
+              <button @click="buyOrSellToken(0.1)">0.1 ETH</button>
+              <button @click="buyOrSellToken(0.2)">0.2 ETH</button>
             </div>
             
-            <button class="connect-wallet" @click="buyOrSellToken(1)"> {{ activeBuyTab === 'buy' ? 'Sell' : 'Buy'}}</button>
+            <button class="connect-wallet" @click="buyOrSellToken(inputEth)"> {{ activeBuyTab === 'buy' ? 'Buy' :'Sell'}}</button>
           </div>
 
           <div class="bonding-curve">
@@ -92,7 +92,7 @@
               <div class="info-tooltip">ⓘ</div>
             </div>
             <div class="curve-info">
-              <p>There are <span class="highlight">784,543,856.88 LLAMA</span> still available for sale in the bonding curve and there are <span class="highlight">512.88 TRX</span> in the bonding curve.</p>
+              <p>There are <span class="highlight">784,543,856.88 LLAMA</span> still available for sale in the bonding curve and there are <span class="highlight">512.88 ETH</span> in the bonding curve.</p>
               <p>When the market cap reaches $ <span class="highlight">149,206.86</span> all the liquidity from the bonding curve will be deposited into AonSwap and burned. Progression increases as the price goes up.</p>
             </div>
           </div>
@@ -116,7 +116,7 @@
         </div>
         
         <div class="right-section">
-          <div class="related-apps">
+          <!-- <div class="related-apps">
             <h3 style="color: #FFFFFF;">Related Agents</h3>
             <div class="apps-container">
               <div class="app-item">
@@ -144,7 +144,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <div class="tabs-container">
             <div class="tabs">
@@ -186,14 +186,12 @@
                 </div>
               </div>
 
-              <BuyAndSellView :token="contract" />
-
               <div v-if="activeTab === 'trading'" class="trading-history">
                 <table>
                   <thead>
                     <tr>
                       <th>Type</th>
-                      <th>Price (TRX)</th>
+                      <th>Price (ETH)</th>
                       <th>Amount</th>
                       <th>Total</th>
                       <th>Time</th>
@@ -238,9 +236,17 @@ Chart.register(...registerables)
 import { CommentService } from '../services/commentService';
 import { TokenService } from '../services/tokenService';
 import BuyAndSellView from '@/components/BuyAndSellView.vue'
-import { ref, onMounted } from 'vue'
+import {computed, onActivated, onMounted, defineProps, provide, ref, watch, reactive} from "vue";
+import { useAccountStore, EthWalletState } from '@/stores/web3'
+import { ethers } from "ethers";
+import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee,
+  buyToken, sellToken, getUserTokenInfo,
+  getBuyAmountUseEth, getSellAmountUseToken
+ } from '@/tools/aon'
+import { formatAmount } from "@/tools/helper";
 
 // const showTrading = ref(false);
+const accStore = useAccountStore();
 
 export default {
   name: 'TokenDetail',
@@ -259,7 +265,9 @@ export default {
       klineData: [],
       activeBuyTab: 'buy',
       showTrading:false,
-      userTokenInfo:{}
+      userTokenInfo:{},
+      maxSlippage: 5,
+      inputEth: '',
     }
   },
   created() {
@@ -267,17 +275,61 @@ export default {
     console.log('contract:', this.contract);
   },
   methods: {
-    buyOrSellToken(ammount) {
-      this.userTokenInfo = {
-        contract: this.contract,
-        supply: 1,
-        balance: 0.00001,
-        ethBalance: 0.00002,
-        listed: false
-      };
-      console.log('buyOrSellToken:', this.userTokenInfo);
+    async updateUserTokenInfo () {
+      try {
+        if (ethers.isAddress(accStore.ethconnectAddress)) {
+          let info = await getUserTokenInfo(this.contract, accStore.ethconnectAddress);
 
-      this.showTrading = true;
+          this.userTokenInfo.contract = this.contract;
+          this.userTokenInfo.supply = info.supply;
+          this.userTokenInfo.balance = info.balance;
+          this.userTokenInfo.ethBalance = info.ethBalance;
+          this.userTokenInfo.listed = info.listed;
+          console.log('info', info)
+        }
+      } catch (error) {
+        console.error('get users token info fail', error)
+      }
+    },
+    async buyOrSellToken(val) {
+      try{
+        await this.updateUserTokenInfo();
+        console.log('buyOrSellToken:', this.userTokenInfo);      
+        // this.showTrading = true
+        
+        const amount = ethers.parseEther(val.toString())
+        var receive;
+        if (this.activeBuyTab === 'buy') {
+          receive = await getBuyAmountWithETHAfterFee(this.userTokenInfo.supply, amount)
+        }else {
+          receive = await getReceivedAmountSellETHAfterFee(this.userTokenInfo.supply, amount)
+        }
+        console.log('receive', receive, 'amount', amount, 'supply:', this.userTokenInfo.supply, 'eth', this.inputEth)
+        
+        // trading.value = true
+        if (!this.userTokenInfo) return;
+        if (this.activeBuyTab === 'buy') {
+          if (!receive) return
+          const hash = await buyToken(this.userTokenInfo.contract, receive, BigInt(this.inputEth * 1e18), Math.ceil(this.maxSlippage * 100), this.userTokenInfo.listed);
+          if (hash) {
+            await this.updateUserTokenInfo();
+          }else{
+
+          }
+        }else {
+          if (!receive) return
+          const hash = await sellToken(this.userTokenInfo.contract, BigInt(this.inputEth * 1e18), receive, Math.ceil(this.maxSlippage * 100), this.userTokenInfo.listed)
+          if (hash) {
+            await this.updateUserTokenInfo();
+          }else {
+
+          }
+        }
+      } catch (e) {
+        console.log(e)
+      } finally {
+        // trading.value = false
+      }
     },
     toggleTab(tab) {
       console.log('activeBuyTab:', tab);
@@ -300,14 +352,14 @@ export default {
       }
     },
     copyContract() {
-      navigator.clipboard.writeText('TBBupmygTph3wKZtqNY5mCRXfvwuY5dT2R3')
+      navigator.clipboard.writeText(accStore.ethconnectAddress)
     },
     addComment() {
       try {
           CommentService.postComment({
-            token: 'AI Agent',
+            token: this.contract,
             comment: this.newComment,
-            createdBy: '0xb492192a8793ec8c2c00379a6de6c9dac8f3bc91'
+            createdBy: accStore.ethconnectAddress
           }).then(response => {
             if (response.status === 'success') {
               this.newComment = '';
@@ -404,14 +456,16 @@ export default {
       })
     },
     async fetchTradingHistory() {
+      console.log('fetchTradingHistory');
       try {
         const response = await TokenService.getRecentTransactions(this.contract);
         this.tradingHistory = response.data.map(tx => ({
           type: tx.isBuy ? 'Buy' : 'Sell',
-          price: (parseFloat(tx.price) / parseFloat(tx.qty)).toFixed(8),
+          price: '$' + (tx.price * tx.ethPrice),
+          ethPrice: tx.ethPrice,
           amount: tx.qty,
           total: tx.quoteQty,
-          time: new Date(tx.time).toLocaleString(),
+          time: tx.ctime,
           from: tx.trader
         }));
         console.log('trading history:', this.tradingHistory);
@@ -442,8 +496,8 @@ export default {
       this.fetchComments();
       this.fetchTopHolders();
       this.fetchTradingHistory();
-      this.relatedTokens();
-      this.tokenAddAppid();
+      // this.relatedTokens();
+      // this.tokenAddAppid();
     });
 
   }

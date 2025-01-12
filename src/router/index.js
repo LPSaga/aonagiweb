@@ -45,7 +45,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory('https://aon.dexian.io'),
+  history: createWebHistory(''),
   routes
 })
 

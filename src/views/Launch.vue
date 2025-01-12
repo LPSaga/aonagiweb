@@ -76,7 +76,7 @@
       <div class="form-group">
         <label>Agent Creation Fee</label>
         <div class="amount-input">
-          <input type="text" value="0.02" readonly />
+          <input type="text" value="0.04" readonly />
           <div class="currency">
             ETH
           </div>
@@ -110,8 +110,28 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { TokenService } from '../services/tokenService';
+import { useAccountStore, EthWalletState } from '@/stores/web3'
+import { createCoin, calculateInitEth, checkTickUsed } from "@/tools/aon";
+import { reactive, ref} from 'vue';
+import { ethers } from "ethers";
+import { formatPrice, formatAmount } from '@/tools/helper'
+
+const accStore = useAccountStore();
+type CreateFormData = {
+  name: string,
+  ticker: string,
+  token: string,
+  createHash?: string,
+  initAmount?: bigint // this is token amount
+  initEth?: bigint // this is eth amount
+}
+const createForm = reactive<CreateFormData> ({
+    name: "",
+    ticker: "",
+    token: "",
+})
 
 export default {
   name: 'Launch',
@@ -155,30 +175,109 @@ export default {
       //   InitialBuy: this.form.initialBuy | '0.01',
       //   createdBy: '0xb492192a8793ec8c2c00379a6de6c9dac8f3bc91'
       // };
-      const tokenData = {
-        name: 'AI Agent',
-        symbol: 'MTK',
-        image: "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
-        contract: '0x54791a2d86e73b5f24c7921816e9251ca191c3d3',
-        tags: '',
-        description:  'This is a mock token for testing',
-        totalSupply: '0.01',
-        website: 'https://www.baidu.com',
-        tg:'https://www.baidu.com',
-        x: 'https://www.baidu.com',
-        Fee:'0.01',
-        InitialBuy: '0.01',
-        createdBy: '0xb492192a8793ec8c2c00379a6de6c9dac8f3bc91'
-      };
+      console.log('Creating')
+      // const account = accStore.getAccountInfo;
+      //   console.log('account', account)
+      //   const val = 1
+      //   createForm.name = 'Test bas'
+      //   createForm.ticker = "AIssa1JSaa"
+      //   if (await checkTickUsed(createForm.ticker)) {
+      //     console.log('ticker', createForm.ticker)
+      //     return;
+      //   }
+      //   createForm.initAmount = ethers.parseEther(val.toString())
+      //   const amount = await calculateInitEth(createForm.initAmount)
+      //   createForm.initEth = amount;
+      //   console.log('createForm', createForm)
+      //   var showingInitEth = formatPrice((createForm.initEth).toString() / 1e18)
+      //   console.log('showingInitEth', showingInitEth)
+
+      //   const tokenData = {
+      //     name: 'Test bas',
+      //     symbol: 'AIJ',
+      //     image: "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
+      //     contract: '0xc6723a6a9a9ac90191aa257ccecfa969ccd2017cc36ca57e4f1626f0f082b028',
+      //     tags: '',
+      //     description:  'This is a mock token for testing',
+      //     totalSupply: showingInitEth,
+      //     website: 'https://www.baidu.com',
+      //     tg:'https://www.baidu.com',
+      //     x: 'https://www.baidu.com',
+      //     Fee:'0.04',
+      //     InitialBuy: createForm.initEth,
+      //     createdBy: accStore.ethconnectAddress
+      //   };
+
+      //   try {
+      //     const response = await TokenService.createToken(tokenData);
+      //     console.log('Token created successfully:', response);
+      //     // 创建完成后跳转到agent列表页面
+      //     this.$router.push('/agent-list');
+      //   } catch (error) {
+      //     console.error('Failed to create token:', error);
+      //   }
+      //   return
 
       try {
-        const response = await TokenService.createToken(tokenData);
-        console.log('Token created successfully:', response);
-        // 创建完成后跳转到agent列表页面
-        this.$router.push('/agent-list');
-      } catch (error) {
-        console.error('Failed to create token:', error);
+        // create token
+        const val = 1
+        createForm.name = 'TestAI'
+        createForm.ticker = "asdddd"
+        if (await checkTickUsed(createForm.ticker)) {
+          console.log('ticker', createForm.ticker)
+          return;
+        }
+        console.log('createLoading val', val.toString())
+        createForm.initAmount = ethers.parseEther(val.toString())
+        const amount = await calculateInitEth(createForm.initAmount)
+        createForm.initEth = amount;
+        var showingInitEth = formatPrice((createForm.initEth).toString() / 1e18)
+        console.log('showingInitEth', showingInitEth)
+        console.log('createForm', createForm)
+
+        const {createHash, token} = await createCoin(createForm);
+        console.log('createHash', createHash)
+        console.log('token', token)//0xc6723a6a9a9ac90191aa257ccecfa969ccd2017cc36ca57e4f1626f0f082b028
+        if (!token) return;
+        createForm.createHash = createHash;
+        createForm.token = token;
+        // upload community info
+        // delete createForm.initAmount
+        // delete createForm.initEth
+        // let storedToken = localStorage.getItem('tokens');
+        // storedToken = storedToken ? storedToken + ',' + token : token;
+        // localStorage.setItem('tokens', storedToken);
+
+        const tokenData = {
+          name: 'Test bbs',
+          symbol: 'AIxnnJ',
+          image: "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
+          contract: token,
+          tags: '',
+          description:  'This is a  token for testing',
+          totalSupply: showingInitEth,
+          website: 'https://www.baidu.com',
+          tg:'https://www.baidu.com',
+          x: 'https://www.baidu.com',
+          Fee:'0.04',
+          InitialBuy: val,
+          createdBy: accStore.ethconnectAddress
+        };
+
+        try {
+          const response = await TokenService.createToken(tokenData);
+          console.log('Token created successfully:', response);
+          // 创建完成后跳转到agent列表页面
+          this.$router.push('/agent-list');
+        } catch (error) {
+          console.error('Failed to create token:', error);
+        }
+      } catch (e) {
+        console.error('create community fail', e)
+      } finally {
+
       }
+
     }
   }
 }

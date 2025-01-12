@@ -18,13 +18,13 @@
                 <div class="stat">
                   <span class="label">Price</span>
                   <span class="value">{{ token.price ?? '0' }}</span>
-                  <span :class="['change', token.aonFee >= 0 ? 'positive' : 'negative']">
+                  <!-- <span :class="['change', token.aonFee >= 0 ? 'positive' : 'negative']">
                     {{ token.aonFee >= 0 ? '+' : '' }}{{ token.aonFee }}
-                  </span>
+                  </span> -->
                 </div>
                 <div class="stat">
                   <span class="label">Market Cap</span>
-                  <span class="value">${{ token.totalSupply }}</span>
+                  <span class="value">{{ token.price * 1000000000 }} ETH</span>
                 </div>
               </div>
             </div>

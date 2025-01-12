@@ -28,9 +28,9 @@ export class TokenServiceImpl extends HttpService {
     }
   }
 
-  async getRecentTransactions(contract) {
+  async getRecentTransactions(token) {
     try {
-      return await this.get(`/tx/recently?contract=${contract}`);
+      return await this.get(`/tx/recently?token=${token}`);
     } catch (error) {
       console.error('Failed to fetch recent transactions:', error);
       throw error;

@@ -1,7 +1,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { initPlugin, getBalance } from '@/tools/wallets'
+import { initPlugin, getBalance, closeProvider } from '@/tools/wallets'
 import ChoseWallet from '@/components/ChoseWallet.vue'
 import CreateCoin from '@/components/CreateCoin.vue'
 import TokenList from '@/components/TokenList.vue'
@@ -19,6 +19,9 @@ onMounted(async () => {
   initPlugin();
 })
 
+function closeWallet() {
+  closeProvider();
+}
 
 async function connect() {
     showChoseWallet.value = !showChoseWallet.value;
@@ -46,23 +49,27 @@ const closeMenu = () => {
 <template>
  <header class="header">
 
-  <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card"> -->
-    <button type="button" @click="getBalance(accStore.ethconnectAddress)">
-      Click to update balance: {{ accStore.ethBalance }} ETH
-    </button>
-  <!-- </div> -->
+      <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card">
+        <button type="button" @click="getBalance(accStore.ethconnectAddress)">
+          Click to update balance: {{ accStore.ethBalance }} ETH
+        </button>
+      </div>
 
-  <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card"> -->
-    <button type="button" @click="showCreateToken = true">
-      Create token
-    </button>
-  <!-- </div> -->
+      <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card">
+        <button type="button" @click="showCreateToken = true">
+          Create token
+        </button>
+      </div> -->
 
-  <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card"> -->
-    <button type="button" @click="showTokenList = true">
-      Token list
-    </button>
-  <!-- </div> -->
+      <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card">
+        <button type="button" @click="showTokenList = true">
+          Token list
+        </button>
+      </div> -->
+
+      <!-- <button type="button" @click="closeWallet">
+          Close Wallet
+      </button> -->
 
       <div class="logo-container">
         <router-link to="/">

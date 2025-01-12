@@ -22,13 +22,15 @@ export const checkTickUsed = async (tick: string) => {
 export const createCoin = async (createForm: any) => {
     const contract = await getContract('AON');
     let tx: any = await contract.createToken(createForm.name, createForm.ticker, {
-        value: createForm.initEth + ethers.parseEther('0.04')
+        value: createForm.initEth + ethers.parseEther('0.001')
     });
-    console.log('tx hash:', tx.hash)
+    console.log('tx', tx)
     await tx.wait();
 
     const hash = tx.hash;
     tx = await getTransactionReceipt(hash);
+    console.log('tx', tx)
+    console.log('tx hash:', tx.hash)
     const event: any = getCreateTokenEventByHash(tx);
     // name, tick, instance, tx.origin
     if (event && event.length == 4 && event[0] == createForm.name && event[1] == createForm.ticker) {

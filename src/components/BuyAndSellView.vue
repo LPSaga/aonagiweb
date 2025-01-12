@@ -107,7 +107,6 @@ async function confirm() {
     if (!token) return;
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
-
       const hash = await buyToken(token!.contract, receiveAmount.value, BigInt(payEth.value * 1e18), Math.ceil(maxSlippage.value * 100), token.listed);
       if (hash) {
         payEth.value = undefined
@@ -144,7 +143,7 @@ async function updateUserTokenInfo () {
       token.balance = info.balance;
       token.ethBalance = info.ethBalance;
       token.listed = info.listed;
-
+      console.log('info', info)
       tokenBalance.value = info.balance;
       ethBalance.value = info.ethBalance;
     }

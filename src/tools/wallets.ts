@@ -3,7 +3,7 @@ import { setupNetwork } from './web3';
 import { MetaMaskSDK } from '@metamask/sdk';
 import { useAccountStore } from '../stores/web3';
 import { EthWalletState } from '../stores/web3';
-
+import { ChainConfig } from '../config';
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
 // this.ethConnectAddress = ''
@@ -143,13 +143,24 @@ export const getBalance = async (addr: string) => {
     return balance;
 }
 
-export const getTransactionReceipt = async (hash: string) => {
-    const provider = getProvider();
-    const tx = await provider.getTransactionReceipt(hash);
-    return tx;
-  };
+// export const getTransactionReceipt = async (hash: string) => {
+//     const provider = getProvider();
+//     console.log('provider', provider);
+//     const tx = await provider.getTransactionReceipt(hash);
+//     return tx;
+//   };
 
 // api接口，初始化钱包
 export async function initPlugin() {
     detectEip6963()
 }
+
+export const getReadOnlyProvider = () => {
+    return new ethers.JsonRpcProvider(ChainConfig.rpc);
+  };
+  
+export const getTransactionReceipt = async (hash: string) => {
+    const provider = getReadOnlyProvider();
+    const tx = await provider.getTransactionReceipt(hash);
+    return tx;
+};

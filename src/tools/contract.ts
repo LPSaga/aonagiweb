@@ -4,8 +4,8 @@ import { ethers } from 'ethers'
 import { uniswapV2Router02 } from '@/config'
 
 export const ContractAddress = {
-    // AON: '0xa6C9A05ae2c04faAF7A0b8F755821df55202b2b7',
-    AON: '0xC8f7B5d8e1CCA8475a9677afDE15840C70D77190',
+    AON: '0xa6C9A05ae2c04faAF7A0b8F755821df55202b2b7',
+    // AON: '0xC8f7B5d8e1CCA8475a9677afDE15840C70D77190',
     UniswapRouter: uniswapV2Router02
 }
 
