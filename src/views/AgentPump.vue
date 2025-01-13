@@ -18,9 +18,9 @@
                 <div class="stat">
                   <span class="label">Price</span>
                   <span class="value">{{ token.price ?? '0' }}</span>
-                  <!-- <span :class="['change', token.aonFee >= 0 ? 'positive' : 'negative']">
-                    {{ token.aonFee >= 0 ? '+' : '' }}{{ token.aonFee }}
-                  </span> -->
+                  <span :class="['change', token.aonFee >= 0 ? 'positive' : 'negative']">
+                    {{ token.percentage }}%
+                  </span>
                 </div>
                 <div class="stat">
                   <span class="label">Market Cap</span>
@@ -47,13 +47,31 @@ export default {
   },
   created() {
     TokenService.getTokenList()
-      .then(tokenList => {
-        console.log('token list:', tokenList);
+      .then(async tokenList => {
+        for (let token of tokenList.data) {
+          try {
+            const response = await TokenService.getDigest24h(token.contract);
+            token.percentage = response.data.percentage;
+          } catch (error) {
+            console.error(`Failed to fetch digest for token ${token.contract}:`, error);
+          }
+        }
         this.tokens = tokenList.data;
       })
       .catch(error => {
         console.error('Error fetching token list:', error);
       });
+  },
+  methods: {
+    async tokenDigest24h() {
+      try {
+        const response = await TokenService.getDigest24h(this.contract);
+        this.digest24h = response.data;
+        console.log('tokenDigest24h:', response);
+      } catch (error) {
+        console.error('Failed to add agent id:', error);
+      }
+    },
   }
 };
 </script>

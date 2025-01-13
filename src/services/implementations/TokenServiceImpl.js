@@ -81,4 +81,13 @@ export class TokenServiceImpl extends HttpService {
       throw error;
     }
   }
+
+  async getDigest24h(token) {
+    try {
+      return await this.get(`/digest/24h?token=${token}`);
+    } catch (error) {
+      console.error('Failed to fetch 24h digest:', error);
+      throw error;
+    }
+  }
 }

@@ -49,11 +49,11 @@ const closeMenu = () => {
 <template>
  <header class="header">
 
-      <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card">
+      <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card">
         <button type="button" @click="getBalance(accStore.ethconnectAddress)">
           Click to update balance: {{ accStore.ethBalance }} ETH
         </button>
-      </div>
+      </div> -->
 
       <!-- <div v-if="accStore.ethConnectState == EthWalletState.Connected" class="card">
         <button type="button" @click="showCreateToken = true">

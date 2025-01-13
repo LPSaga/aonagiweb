@@ -27,22 +27,22 @@
       </div>
 
       <div class="token-stats" v-if="tokenDetail">
-        <div class="stat-item">
+        <div class="stat-item" v-if="digest24h.price">
           <div class="label" style="color: #8F85B8;">Price</div>
-          <div class="value" style="color: #FFFFFF;">{{ tokenDetail.price }} ETH</div>
-          <div class="change negative">0%</div>
+          <div class="value" style="color: #FFFFFF;">{{ digest24h.price }} ETH</div>
+          <div class="change negative">{{ digest24h.percentage }}%</div>
         </div>
         <div class="stat-item">
           <div class="label" style="color: #8F85B8;">Market Cap</div>
-          <div class="value" style="color: #FFFFFF;">{{ tokenDetail.price * 1000000000 }} ETH</div>
+          <div class="value" style="color: #FFFFFF;">{{ digest24h.price * 1000000000 }} ETH</div>
         </div>
-        <!-- <div class="stat-item">
-          <div class="label" style="color: #8F85B8;">Virtual Liquidity</div>
-          <div class="value" style="color: #FFFFFF;">$21.19k</div>
-        </div> -->
         <div class="stat-item">
+          <div class="label" style="color: #8F85B8;">Virtual Liquidity</div>
+          <div class="value" style="color: #FFFFFF;">$0k</div>
+        </div>
+        <div class="stat-item" v-if="digest24h">
           <div class="label" style="color: #8F85B8;">24H Volume</div>
-          <div class="value" style="color: #FFFFFF;">-1 ETH</div>
+          <div class="value" style="color: #FFFFFF;"> {{ digest24h.volume }} ETH</div>
         </div>
       </div>
 
@@ -51,39 +51,6 @@
           <div class="chart" style="width: 600px; height: 400px;">
             <h3 style="color: #FFFFFF;">Trading Chart</h3>
             <canvas id="klineChart"></canvas>
-          </div>
-
-          <div class="trade-form">
-            <div class="trade-tabs">
-              <button 
-                class="tab" 
-                :class="{ active: activeBuyTab === 'buy' }" 
-                @click="toggleTab('buy')"
-              >
-                Buy
-              </button>
-              <button 
-                class="tab" 
-                :class="{ active: activeBuyTab === 'sell' }" 
-                @click="toggleTab('sell')"
-              >
-                Sell
-              </button>
-            </div>
-            
-            <div class="input-group">
-              <input type="number" placeholder="Enter amount" v-model="inputEth"/>
-              <span class="currency">ETH</span>
-            </div>
-            
-            <div class="quick-amounts">
-              <button @click="buyOrSellToken(0.01)">0.01 ETH</button>
-              <button @click="buyOrSellToken(0.05)">0.05 ETH</button>
-              <button @click="buyOrSellToken(0.1)">0.1 ETH</button>
-              <button @click="buyOrSellToken(0.2)">0.2 ETH</button>
-            </div>
-            
-            <button class="connect-wallet" @click="buyOrSellToken(inputEth)"> {{ activeBuyTab === 'buy' ? 'Buy' :'Sell'}}</button>
           </div>
 
           <div class="bonding-curve">
@@ -103,11 +70,11 @@
               <div v-for="holder in topHolders" :key="holder.id" class="distribution-item">
                 <div class="holder">{{ holder.holder }}</div>
                 <div class="holder-info">
-                  <div class="percentage-text">{{ (holder.amount / 1000000000).toFixed(5) }} %</div>
+                  <div class="percentage-text">{{ (holder.amount / 10000000).toFixed(2) }} %</div>
                   <div class="holder-type">{{ holder.type }}</div>
                 </div>
                 <div class="percentage-bar">
-                  <div class="bar" :style="{ width: (holder.amount / 1000000000).toFixed(5) * 100 + '%' }"></div>
+                  <div class="bar" :style="{ width: (holder.amount / 10000000).toFixed(2) + '%' }"></div>
                 </div>
               </div>
             </div>
@@ -146,7 +113,43 @@
             </div>
           </div> -->
 
-          <div class="tabs-container">
+          <div class="trade-form">
+            <div class="trade-tabs">
+              <button 
+                class="tab" 
+                :class="{ active: activeBuyTab === 'buy' }" 
+                @click="toggleTab('buy')"
+              >
+                Buy
+              </button>
+              <button 
+                class="tab" 
+                :class="{ active: activeBuyTab === 'sell' }" 
+                @click="toggleTab('sell')"
+              >
+                Sell
+              </button>
+            </div>
+            
+            <div class="input-group">
+              <input type="number" placeholder="Enter amount" v-model="inputEth"/>
+              <span class="currency">ETH</span>
+            </div>
+            
+            <div class="quick-amounts">
+              <button @click="buyOrSellToken(0.01)">0.01 ETH</button>
+              <button @click="buyOrSellToken(0.05)">0.05 ETH</button>
+              <button @click="buyOrSellToken(0.1)">0.1 ETH</button>
+              <button @click="buyOrSellToken(0.2)">0.2 ETH</button>
+            </div>
+            
+            <button class="connect-wallet" @click="buyOrSellToken(inputEth)"> {{ activeBuyTab === 'buy' ? 'Buy' :'Sell'}}</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="tabs-container">
             <div class="tabs">
               <button 
                 :class="['tab', { active: activeTab === 'comments' }]"
@@ -212,8 +215,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       <div class="additional-info">
         <!-- Removed -->
@@ -270,6 +271,7 @@ export default {
       userTokenInfo:{},
       maxSlippage: 5,
       inputEth: '',
+      digest24h: '',
     }
   },
   created() {
@@ -512,6 +514,15 @@ export default {
         console.error('Failed to add agent id:', error);
       }
     },
+    async tokenDigest24h() {
+      try {
+        const response = await TokenService.getDigest24h(this.contract);
+        this.digest24h = response.data;
+        console.log('tokenDigest24h:', response);
+      } catch (error) {
+        console.error('Failed to add agent id:', error);
+      }
+    },
   },
   mounted() {
     this.fetchTokenDetail().then(() => {
@@ -519,6 +530,7 @@ export default {
       this.fetchComments();
       this.fetchTopHolders();
       this.fetchTradingHistory();
+      this.tokenDigest24h();
       // this.relatedTokens();
       // this.tokenAddAppid();
     });
@@ -785,7 +797,164 @@ export default {
         }
       }
 
+      .bonding-curve {
+        padding-top: 20px;
+
+        .curve-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 15px;
+
+          h3 {
+            font-size: 1.1rem;
+            margin: 0;
+            color: #FFFFFF;
+          }
+
+          .info-tooltip {
+            cursor: pointer;
+            color: #8a8a8a;
+            font-size: 0.9rem;
+          }
+        }
+
+        .curve-info {
+          font-size: 0.9rem;
+          line-height: 1.5;
+          color: #b0b0b0;
+
+          .highlight {
+            color: #FFFFFF;
+            font-weight: 500;
+          }
+        }
+      }
+
+      .holder-distribution {
+        padding-top: 20px;
+        h3 {
+          font-size: 1.1rem;
+          margin: 0 0 15px 0;
+          color: #FFFFFF;
+        }
+
+        .distribution-list {
+          .distribution-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+
+            .holder {
+              flex: 0 0 120px;
+              font-family: monospace;
+              font-size: 0.9rem;
+            }
+
+            .holder-info {
+              flex: 0 0 100px;
+              text-align: right;
+              padding-right: 15px;
+
+              .percentage-text {
+                font-weight: 500;
+                color: #FFFFFF;
+              }
+
+              .holder-type {
+                font-size: 0.8rem;
+                color: #8a8a8a;
+              }
+            }
+
+            .percentage-bar {
+              flex: 1;
+              height: 6px;
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 3px;
+              overflow: hidden;
+
+              .bar {
+                height: 100%;
+                background: linear-gradient(90deg, #4a90e2, #357abd);
+                border-radius: 3px;
+                transition: width 0.3s ease;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .right-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+
+      .related-apps {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+
+        h3 {
+          font-size: 1.1rem;
+          margin: 0 0 15px 0;
+          color: #FFFFFF;
+        }
+
+        .apps-container {
+          display: flex;
+          gap: 20px;
+          justify-content: space-between;
+
+          .app-item {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+
+            &:hover {
+              transform: translateY(-2px);
+            }
+
+            .app-icon {
+              width: 60px;
+              height: 60px;
+              margin: 0 auto 10px;
+              border-radius: 12px;
+              overflow: hidden;
+
+              img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
+            }
+
+            .app-info {
+              .app-name {
+                color: #FFFFFF;
+                font-size: 0.9rem;
+                font-weight: 500;
+              }
+            }
+          }
+        }
+      }
+
       .trade-form {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        width: 100%;
+
         .trade-tabs {
           display: flex;
           gap: 10px;
@@ -876,160 +1045,14 @@ export default {
           }
         }
       }
-
-      .bonding-curve {
-        .curve-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 15px;
-
-          h3 {
-            font-size: 1.1rem;
-            margin: 0;
-            color: #FFFFFF;
-          }
-
-          .info-tooltip {
-            cursor: pointer;
-            color: #8a8a8a;
-            font-size: 0.9rem;
-          }
-        }
-
-        .curve-info {
-          font-size: 0.9rem;
-          line-height: 1.5;
-          color: #b0b0b0;
-
-          .highlight {
-            color: #FFFFFF;
-            font-weight: 500;
-          }
-        }
-      }
-
-      .holder-distribution {
-        h3 {
-          font-size: 1.1rem;
-          margin: 0 0 15px 0;
-          color: #FFFFFF;
-        }
-
-        .distribution-list {
-          .distribution-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-
-            .holder {
-              flex: 0 0 120px;
-              font-family: monospace;
-              font-size: 0.9rem;
-            }
-
-            .holder-info {
-              flex: 0 0 100px;
-              text-align: right;
-              padding-right: 15px;
-
-              .percentage-text {
-                font-weight: 500;
-                color: #FFFFFF;
-              }
-
-              .holder-type {
-                font-size: 0.8rem;
-                color: #8a8a8a;
-              }
-            }
-
-            .percentage-bar {
-              flex: 1;
-              height: 6px;
-              background: rgba(255, 255, 255, 0.1);
-              border-radius: 3px;
-              overflow: hidden;
-
-              .bar {
-                height: 100%;
-                background: linear-gradient(90deg, #4a90e2, #357abd);
-                border-radius: 3px;
-                transition: width 0.3s ease;
-              }
-            }
-          }
-        }
-      }
+      
     }
+  }
+  .tabs-container {
+    padding-top: 20px;
 
-    .right-section {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      width: 100%;
-      min-width: 320px;
-
-      .related-apps {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 20px;
-
-        h3 {
-          font-size: 1.1rem;
-          margin: 0 0 15px 0;
-          color: #FFFFFF;
-        }
-
-        .apps-container {
-          display: flex;
-          gap: 20px;
-          justify-content: space-between;
-
-          .app-item {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            transition: transform 0.3s ease;
-
-            &:hover {
-              transform: translateY(-2px);
-            }
-
-            .app-icon {
-              width: 60px;
-              height: 60px;
-              margin: 0 auto 10px;
-              border-radius: 12px;
-              overflow: hidden;
-
-              img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-              }
-            }
-
-            .app-info {
-              .app-name {
-                color: #FFFFFF;
-                font-size: 0.9rem;
-                font-weight: 500;
-              }
-            }
-          }
-        }
-      }
-
-      .tabs-container {
         .tabs {
-          display: flex;
+          // display: flex;
           gap: 10px;
           margin-bottom: 20px;
 
@@ -1147,16 +1170,16 @@ export default {
           }
 
           .trading-history {
-            // width: 100%;
-            max-width:400px;
+            width: 100%;
+            // max-width: 500px;
             overflow-x: auto;
 
             table {
-              width: 100%;
+              width: 98%;
               border-collapse: collapse;
 
               th, td {
-                padding: 12px;
+                padding: 1%;
                 text-align: left;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 font-size: 0.9rem;
@@ -1201,7 +1224,5 @@ export default {
           }
         }
       }
-    }
-  }
 }
 </style>
