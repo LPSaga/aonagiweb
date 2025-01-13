@@ -23,21 +23,25 @@
     <div class="launch-form">
       <div class="form-group">
         <label>Image *</label>
-        <div class="image-upload">
-          <div class="upload-box">
-            <i class="upload-icon">+</i>
-            <div class="upload-text">
-              <div>JPEG/PNG/WEBP/GIF</div>
-              <div class="size-limit">Less Than 4MB</div>
-            </div>
-          </div>
-        </div>
+        <el-upload
+          class="upload-demo"
+          drag
+          action=""
+          :on-change="handleImageUpload"
+          :before-upload="beforeUpload"
+          :show-file-list="false"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+        >
+          <i class="el-icon-upload"></i>
+          <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
+          <div class="el-upload__tip" slot="tip">JPEG/PNG/WEBP/GIF, less than 4MB</div>
+        </el-upload>
       </div>
 
       <div class="form-group">
         <label>AI Agent Name *</label>
         <div class="input-wrapper">
-          <input type="text" placeholder="Enter AI Agent name" maxlength="20" />
+          <input type="text" placeholder="Enter AI Agent name" maxlength="20" v-model="form.name"/>
           <span class="char-count">0/20</span>
         </div>
       </div>
@@ -45,7 +49,7 @@
       <div class="form-group">
         <label>AI Agent Symbol ($Ticker) *</label>
         <div class="input-wrapper">
-          <input type="text" placeholder="Enter AI Agent symbol" maxlength="10" />
+          <input type="text" placeholder="Enter AI Agent symbol" maxlength="10" v-model="form.ticker"/>
           <span class="char-count">0/10</span>
         </div>
       </div>
@@ -53,24 +57,24 @@
       <div class="form-group">
         <label>AI Agent Description *</label>
         <div class="input-wrapper">
-          <textarea placeholder="Enter AI Agent description" maxlength="256" rows="4"></textarea>
+          <textarea placeholder="Enter AI Agent description" maxlength="256" rows="4" v-model="form.description"></textarea>
           <span class="char-count">0/256</span>
         </div>
       </div>
 
       <div class="form-group">
         <label>Website</label>
-        <input type="text" placeholder="Optional" class="optional-input" />
+        <input type="text" placeholder="Optional" class="optional-input" v-model="form.website"/>
       </div>
 
       <div class="form-group">
         <label>Telegram</label>
-        <input type="text" placeholder="Optional" class="optional-input" />
+        <input type="text" placeholder="Optional" class="optional-input" v-model="form.telegram"/>
       </div>
 
       <div class="form-group">
         <label>Twitter</label>
-        <input type="text" placeholder="Optional" class="optional-input" />
+        <input type="text" placeholder="Optional" class="optional-input" v-model="form.twitter"/>
       </div>
 
       <div class="form-group">
@@ -86,7 +90,7 @@
       <div class="form-group">
         <label>Initial Buy <span class="subtitle">be the first person to buy your AI Agent</span></label>
         <div class="amount-input">
-          <input type="text" placeholder="Optional, Enter the amount" />
+          <input type="text" placeholder="Optional, Enter the amount" v-model="form.initialBuyAmount"/>
           <div class="currency">
             ETH 
           </div>
@@ -117,6 +121,7 @@ import { createCoin, calculateInitEth, checkTickUsed } from "@/tools/aon";
 import { reactive, ref} from 'vue';
 import { ethers } from "ethers";
 import { formatPrice, formatAmount } from '@/tools/helper'
+import { ElMessage, ElUpload } from 'element-plus'
 
 const accStore = useAccountStore();
 type CreateFormData = {
@@ -135,135 +140,87 @@ const createForm = reactive<CreateFormData> ({
 
 export default {
   name: 'Launch',
+  components: {
+    ElMessage,
+    ElUpload
+  },
   data() {
     return {
       form: {
         image: null,
         name: '',
-        symbol: '',
+        ticker: '',
         description: '',
         website: '',
         telegram: '',
         twitter: '',
-        initialBuy: '',
+        initialBuyAmount: '', // Ensure this property is initialized
         fee: ''
       }
     }
   },
   methods: {
-    handleImageUpload(event) {
-      const file = event.target.files[0]
-      if (file && file.size <= 4 * 1024 * 1024) { // 4MB limit
-        // Handle file upload
-      } else {
-        // Show error message
+    beforeUpload(file) {
+      const isLt4M = file.size / 1024 / 1024 < 4;
+      if (!isLt4M) {
+        this.showError('File size must be less than 4MB.');
       }
+      return isLt4M;
+    },
+    handleImageUpload(file) {
+      this.form.image = file.raw;
+    },
+    showError(message) {
+      ElMessage({
+        showClose: true,
+        message: message,
+        type: 'error',
+        customClass: 'center-message'
+      })
     },
     async createAgent() {
-      // const tokenData = {
-      //   name: this.form.name | 'AI Agent',
-      //   symbol: this.form.symbol | 'MTK',
-      //   image: this.form.image | "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
-      //   contract: '0x54791a2d86e73b5f24c7921816e9251ca191c3d3',
-      //   tags: '',
-      //   description: this.form.description | 'This is a mock token for testing',
-      //   totalSupply: '0.01',
-      //   website: this.form.website | 'https://www.baidu.com',
-      //   tg: this.form.telegram | 'https://www.baidu.com',
-      //   x: this.form.twitter | 'https://www.baidu.com',
-      //   Fee: this.form.fee | '0.01',
-      //   InitialBuy: this.form.initialBuy | '0.01',
-      //   createdBy: '0xb492192a8793ec8c2c00379a6de6c9dac8f3bc91'
-      // };
+      // Check for mandatory fields
+      console.log('form data', this.form)
+      if (!this.form.name || !this.form.ticker || !this.form.description) {
+        this.showError('The fields name, symbol, and description are required.');
+        return;
+      }
       console.log('Creating')
-      // const account = accStore.getAccountInfo;
-      //   console.log('account', account)
-      //   const val = 1
-      //   createForm.name = 'Test bas'
-      //   createForm.ticker = "AIssa1JSaa"
-      //   if (await checkTickUsed(createForm.ticker)) {
-      //     console.log('ticker', createForm.ticker)
-      //     return;
-      //   }
-      //   createForm.initAmount = ethers.parseEther(val.toString())
-      //   const amount = await calculateInitEth(createForm.initAmount)
-      //   createForm.initEth = amount;
-      //   console.log('createForm', createForm)
-      //   var showingInitEth = formatPrice((createForm.initEth).toString() / 1e18)
-      //   console.log('showingInitEth', showingInitEth)
-
-      //   const tokenData = {
-      //     name: 'Test bas',
-      //     symbol: 'AIJ',
-      //     image: "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
-      //     contract: '0xc6723a6a9a9ac90191aa257ccecfa969ccd2017cc36ca57e4f1626f0f082b028',
-      //     tags: '',
-      //     description:  'This is a mock token for testing',
-      //     totalSupply: showingInitEth,
-      //     website: 'https://www.baidu.com',
-      //     tg:'https://www.baidu.com',
-      //     x: 'https://www.baidu.com',
-      //     Fee:'0.04',
-      //     InitialBuy: createForm.initEth,
-      //     createdBy: accStore.ethconnectAddress
-      //   };
-
-      //   try {
-      //     const response = await TokenService.createToken(tokenData);
-      //     console.log('Token created successfully:', response);
-      //     // 创建完成后跳转到agent列表页面
-      //     this.$router.push('/agent-list');
-      //   } catch (error) {
-      //     console.error('Failed to create token:', error);
-      //   }
-      //   return
-
       try {
         // create token
-        const val = 1
-        createForm.name = 'TestAI'
-        createForm.ticker = "asdddd"
+        createForm.name = this.form.name
+        createForm.ticker = this.form.ticker
         if (await checkTickUsed(createForm.ticker)) {
-          console.log('ticker', createForm.ticker)
+          this.showError('This symbol has been created.');
           return;
         }
-        console.log('createLoading val', val.toString())
+        const val = this.form.initialBuyAmount | 0
         createForm.initAmount = ethers.parseEther(val.toString())
         const amount = await calculateInitEth(createForm.initAmount)
         createForm.initEth = amount;
         var showingInitEth = formatPrice((createForm.initEth).toString() / 1e18)
-        console.log('showingInitEth', showingInitEth)
-        console.log('createForm', createForm)
 
         const {createHash, token} = await createCoin(createForm);
-        console.log('createHash', createHash)
-        console.log('token', token)//0xc6723a6a9a9ac90191aa257ccecfa969ccd2017cc36ca57e4f1626f0f082b028
+        console.log('token', token)
         if (!token) return;
         createForm.createHash = createHash;
         createForm.token = token;
-        // upload community info
-        // delete createForm.initAmount
-        // delete createForm.initEth
-        // let storedToken = localStorage.getItem('tokens');
-        // storedToken = storedToken ? storedToken + ',' + token : token;
-        // localStorage.setItem('tokens', storedToken);
 
         const tokenData = {
-          name: 'Test bbs',
-          symbol: 'AIxnnJ',
-          image: "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
+          name: this.form.name | '',
+          symbol: this.form.ticker | '',
+          image: this.form.image | "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
           contract: token,
           tags: '',
-          description:  'This is a  token for testing',
+          description: this.form.description | '',
           totalSupply: showingInitEth,
-          website: 'https://www.baidu.com',
-          tg:'https://www.baidu.com',
-          x: 'https://www.baidu.com',
-          Fee:'0.04',
-          InitialBuy: val,
+          website: this.form.website | '',
+          tg: this.form.telegram | '',
+          x: this.form.twitter | '',
+          Fee: this.form.fee | '0.04',
+          InitialBuy: this.form.initialBuyAmount | '',
           createdBy: accStore.ethconnectAddress
         };
-
         try {
           const response = await TokenService.createToken(tokenData);
           console.log('Token created successfully:', response);
@@ -271,13 +228,14 @@ export default {
           this.$router.push('/agent-list');
         } catch (error) {
           console.error('Failed to create token:', error);
+          this.showError('Failed to create token.');
         }
       } catch (e) {
         console.error('create community fail', e)
+        this.showError('Failed to create token.');
       } finally {
 
       }
-
     }
   }
 }
@@ -351,33 +309,13 @@ export default {
         }
       }
 
-      .image-upload {
-        .upload-box {
-          border: 2px dashed rgba(255, 255, 255, 0.2);
-          border-radius: 10px;
-          padding: 30px;
-          text-align: center;
-          cursor: pointer;
+      .el-upload {
+        width: 100%;
+      }
 
-          &:hover {
-            border-color: #7c3aed;
-          }
-
-          .upload-icon {
-            font-size: 2em;
-            color: #51ffbd;
-            margin-bottom: 10px;
-          }
-
-          .upload-text {
-            color: #51ffbd;
-            
-            .size-limit {
-              font-size: 0.9em;
-              margin-top: 5px;
-            }
-          }
-        }
+      .el-upload__tip {
+        font-size: 0.9em;
+        color: #51ffbd;
       }
 
       .input-wrapper {

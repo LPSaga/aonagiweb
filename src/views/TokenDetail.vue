@@ -42,7 +42,7 @@
         </div> -->
         <div class="stat-item">
           <div class="label" style="color: #8F85B8;">24H Volume</div>
-          <div class="value" style="color: #FFFFFF;">6,239.73 ETH</div>
+          <div class="value" style="color: #FFFFFF;">-1 ETH</div>
         </div>
       </div>
 
@@ -103,11 +103,11 @@
               <div v-for="holder in topHolders" :key="holder.id" class="distribution-item">
                 <div class="holder">{{ holder.holder }}</div>
                 <div class="holder-info">
-                  <div class="percentage-text">{{ holder.amount }}%</div>
+                  <div class="percentage-text">{{ (holder.amount / 1000000000).toFixed(5) }} %</div>
                   <div class="holder-type">{{ holder.type }}</div>
                 </div>
                 <div class="percentage-bar">
-                  <div class="bar" :style="{ width: holder.amount + '%' }"></div>
+                  <div class="bar" :style="{ width: (holder.amount / 1000000000).toFixed(5) * 100 + '%' }"></div>
                 </div>
               </div>
             </div>
@@ -244,6 +244,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee,
   getBuyAmountUseEth, getSellAmountUseToken
  } from '@/tools/aon'
 import { formatAmount } from "@/tools/helper";
+import { ElMessage } from 'element-plus'
 
 // const showTrading = ref(false);
 const accStore = useAccountStore();
@@ -252,6 +253,7 @@ export default {
   name: 'TokenDetail',
   components: {
     BuyAndSellView,
+    ElMessage
   },
   data() {
     return {
@@ -275,6 +277,14 @@ export default {
     console.log('contract:', this.contract);
   },
   methods: {
+    showError(message) {
+      ElMessage({
+        showClose: true,
+        message: message,
+        type: 'error',
+        customClass: 'center-message'
+      })
+    },
     async updateUserTokenInfo () {
       try {
         if (ethers.isAddress(accStore.ethconnectAddress)) {
@@ -289,14 +299,13 @@ export default {
         }
       } catch (error) {
         console.error('get users token info fail', error)
+        this.showError('get users token info fail')
       }
     },
     async buyOrSellToken(val) {
       try{
         await this.updateUserTokenInfo();
-        console.log('buyOrSellToken:', this.userTokenInfo);      
-        // this.showTrading = true
-        
+        console.log('buyOrSellToken:', this.userTokenInfo);              
         const amount = ethers.parseEther(val.toString())
         var receive;
         if (this.activeBuyTab === 'buy') {
@@ -305,30 +314,42 @@ export default {
           receive = await getReceivedAmountSellETHAfterFee(this.userTokenInfo.supply, amount)
         }
         console.log('receive', receive, 'amount', amount, 'supply:', this.userTokenInfo.supply, 'eth', this.inputEth)
-        
-        // trading.value = true
+
         if (!this.userTokenInfo) return;
         if (this.activeBuyTab === 'buy') {
           if (!receive) return
-          const hash = await buyToken(this.userTokenInfo.contract, receive, BigInt(this.inputEth * 1e18), Math.ceil(this.maxSlippage * 100), this.userTokenInfo.listed);
+          if (this.userTokenInfo.ethBalance < val) {
+            this.showError('Insufficient ETH balance')
+            return
+          }
+          const hash = await buyToken(this.userTokenInfo.contract, receive, BigInt(val * 1e18), Math.ceil(this.maxSlippage * 100), this.userTokenInfo.listed);
           if (hash) {
             await this.updateUserTokenInfo();
           }else{
-
+            this.showError('buyToken fail')
           }
         }else {
           if (!receive) return
-          const hash = await sellToken(this.userTokenInfo.contract, BigInt(this.inputEth * 1e18), receive, Math.ceil(this.maxSlippage * 100), this.userTokenInfo.listed)
+          if (this.userTokenInfo.ethBalance < val) {
+            this.error('Insufficient ETH balance')
+            return
+          }
+          const hash = await sellToken(this.userTokenInfo.contract, BigInt(val * 1e18), receive, Math.ceil(this.maxSlippage * 100), this.userTokenInfo.listed)
           if (hash) {
             await this.updateUserTokenInfo();
           }else {
-
+            this.showError('sellToken fail')
           }
         }
       } catch (e) {
         console.log(e)
+        if (this.activeBuyTab === 'buy') {
+          this.showError('buyToken fail')
+        }else {
+          this.showError('sellToken fail')
+        }
       } finally {
-        // trading.value = false
+
       }
     },
     toggleTab(tab) {
@@ -368,6 +389,7 @@ export default {
           });
         } catch (error) {
           console.error('Failed to add comment:', error);
+          this.showError('Failed to add comment');
         }
     },
     async fetchTopHolders() {
@@ -386,6 +408,7 @@ export default {
         this.tokenDetail = response.data || {};
       } catch (error) {
         console.error('Failed to fetch token detail:', error);
+        this.showError('Failed to fetch token detail');
         this.tokenDetail = {};
       }
     },
@@ -461,7 +484,7 @@ export default {
         const response = await TokenService.getRecentTransactions(this.contract);
         this.tradingHistory = response.data.map(tx => ({
           type: tx.isBuy ? 'Buy' : 'Sell',
-          price: '$' + (tx.price * tx.ethPrice),
+          price: tx.price,
           ethPrice: tx.ethPrice,
           amount: tx.qty,
           total: tx.quoteQty,
@@ -827,7 +850,7 @@ export default {
             background: rgba(255, 255, 255, 0.1);
             border: none;
             border-radius: 5px;
-            color: #8F85B8;
+            color: #b0b0b0 ;
             cursor: pointer;
             transition: background 0.3s;
 
@@ -1124,13 +1147,13 @@ export default {
           }
 
           .trading-history {
-            width: 100%;
+            // width: 100%;
+            max-width:400px;
             overflow-x: auto;
 
             table {
               width: 100%;
               border-collapse: collapse;
-              min-width: 800px;
 
               th, td {
                 padding: 12px;
