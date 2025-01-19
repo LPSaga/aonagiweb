@@ -7,9 +7,9 @@
 
       <div class="agent-grid">
         <div class="agent-card" v-for="(agent, index) in myAgents" :key="index">
-          <router-link :to="'/token/' + agent.id" class="agent-link">
+          <router-link :to="'/token/' + agent.contract" class="agent-link">
             <div class="agent-image">
-              <img :src="agent.image" :alt="agent.name" />
+              <img :src="agent.image ? agent.image : 'https://iaon.lifejiajia.com/agentimages/human.jpg' " :alt="agent.name" />
             </div>
             <div class="agent-info">
               <h3>{{ agent.name }}</h3>
@@ -18,13 +18,13 @@
                 <div class="stat">
                   <span class="label">Price</span>
                   <span class="value">{{ agent.price }}</span>
-                  <span :class="['change', agent.priceChange >= 0 ? 'positive' : 'negative']">
-                    {{ agent.priceChange >= 0 ? '+' : '' }}{{ agent.priceChange }}%
-                  </span>
+                  <!-- <span :class="['change', agent.percentage >= 0 ? 'positive' : 'negative']">
+                    {{ agent.percentage }}%
+                  </span> -->
                 </div>
                 <div class="stat">
                   <span class="label">Market Cap</span>
-                  <span class="value">${{ agent.marketCap }}</span>
+                  <span class="value">${{ agent.price * 1000000000}}</span>
                 </div>
               </div>
               <div class="linked-apps">
@@ -67,6 +67,12 @@
 </template>
 
 <script>
+import { TokenService } from '../services/tokenService';
+import { useAccountStore, EthWalletState } from '@/stores/web3'
+
+
+const accStore = useAccountStore();
+
 export default {
   name: 'MyAgents',
   data() {
@@ -74,31 +80,22 @@ export default {
       showDialog: false,
       newAppId: '',
       selectedAgentIndex: null,
-      myAgents: [
-        {
-          id: 'myagent1',
-          name: 'My First Agent',
-          image: require('@/assets/llama3.jpg'),
-          description: 'A powerful AI agent for natural language processing',
-          price: '0.000042 ETH',
-          priceChange: 3.75,
-          marketCap: '12.34k',
-          linkedApps: []
-        },
-        {
-          id: 'myagent2',
-          name: 'Code Assistant',
-          image: require('@/assets/codecopilot.jpg'),
-          description: 'Intelligent coding assistant with multi-language support',
-          price: '0.000038 ETH',
-          priceChange: -1.25,
-          marketCap: '9.87k',
-          linkedApps: []
-        }
-      ]
+      myAgents: []
     }
   },
+  created() {
+    this.fetchMyTokenData();
+  },
   methods: {
+    fetchMyTokenData() {
+      TokenService.getMyToken('0xc8f7b5d8e1cca8475a9677afde15840c70d77190').then(response => {
+        console.log('getMyToken response', response)
+        this.myAgents = response.data;
+      })
+      .catch(error => {
+        console.error('Error fetching token list:', error);
+      });
+    },
     showLinkAppDialog(agentIndex) {
       this.selectedAgentIndex = agentIndex;
       this.showDialog = true;
@@ -111,17 +108,22 @@ export default {
     },
     addLinkedApp() {
       if (!this.newAppId.trim()) return;
-      
-      const agent = this.myAgents[this.selectedAgentIndex];
-      if (!agent.linkedApps) {
-        this.$set(agent, 'linkedApps', []);
-      }
-      agent.linkedApps.push(this.newAppId.trim());
+      console.log('newAppId', this.newAppId, 'token', this.myAgents[this.selectedAgentIndex])
+      this.tokenAddAppid(this.newAppId, this.myAgents[this.selectedAgentIndex]);
+
       this.closeDialog();
     },
     removeLinkedApp(agentIndex, appIndex) {
       this.myAgents[agentIndex].linkedApps.splice(appIndex, 1);
-    }
+    },
+    async tokenAddAppid(appid, token) {
+      try {
+        const response = await TokenService.addAgentId({'appKey':appid, 'token':token.contract});
+        console.log('tokenAddAppid:', response);
+      } catch (error) {
+        console.error('Failed to add agent id:', error);
+      }
+    },
   }
 }
 </script>

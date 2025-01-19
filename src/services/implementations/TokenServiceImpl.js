@@ -64,9 +64,9 @@ export class TokenServiceImpl extends HttpService {
     }
   }
 
-  async addAgentId(agentAppId) {
+  async addAgentId(params) {
     try {
-      return await this.post('/token/addAgentId', { agentAppId });
+      return await this.post('/token/addAgentId', params);
     } catch (error) {
       console.error('Failed to add agent ID:', error);
       throw error;
@@ -87,6 +87,30 @@ export class TokenServiceImpl extends HttpService {
       return await this.get(`/digest/24h?token=${token}`);
     } catch (error) {
       console.error('Failed to fetch 24h digest:', error);
+      throw error;
+    }
+  }
+
+  async getMyToken(address) {
+    try {
+      return await this.get(`/token/my?address=${address}`);
+    } catch (error) {
+      console.error('Failed to fetch token list:', error);
+      throw error;
+    }
+  }
+
+  async uploadImage(file) {
+    let formData = new FormData();
+    formData.append('file', file);
+    try {
+      return await this.post('/upload/image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } catch (error) {
+      console.error('Failed to upload image:', error);
       throw error;
     }
   }

@@ -26,15 +26,17 @@
         <el-upload
           class="upload-demo"
           drag
-          action=""
-          :on-change="handleImageUpload"
+          action="https://aon.dexian.io/upload/image"
+          :on-success="handleSuccess"
           :before-upload="beforeUpload"
+          :http-request="customRequest"
           :show-file-list="false"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/jpeg,image/png"
         >
+          <img v-if="form.image" :src="form.image" alt="Uploaded Image" class="uploaded-image" />
           <i class="el-icon-upload"></i>
           <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
-          <div class="el-upload__tip" slot="tip">JPEG/PNG/WEBP/GIF, less than 4MB</div>
+          <div class="el-upload__tip" slot="tip">JPEG/PNG, less than 4MB</div>
         </el-upload>
       </div>
 
@@ -114,7 +116,7 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import { TokenService } from '../services/tokenService';
 import { useAccountStore, EthWalletState } from '@/stores/web3'
 import { createCoin, calculateInitEth, checkTickUsed } from "@/tools/aon";
@@ -122,17 +124,18 @@ import { reactive, ref} from 'vue';
 import { ethers } from "ethers";
 import { formatPrice, formatAmount } from '@/tools/helper'
 import { ElMessage, ElUpload } from 'element-plus'
+import axios from 'axios';
 
 const accStore = useAccountStore();
-type CreateFormData = {
-  name: string,
-  ticker: string,
-  token: string,
-  createHash?: string,
-  initAmount?: bigint // this is token amount
-  initEth?: bigint // this is eth amount
-}
-const createForm = reactive<CreateFormData> ({
+// type CreateFormData = {
+//   name: string,
+//   ticker: string,
+//   token: string,
+//   createHash?: string,
+//   initAmount?: bigint // this is token amount
+//   initEth?: bigint // this is eth amount
+// }
+const createForm = reactive<any> ({
     name: "",
     ticker: "",
     token: "",
@@ -162,13 +165,43 @@ export default {
   methods: {
     beforeUpload(file) {
       const isLt4M = file.size / 1024 / 1024 < 4;
-      if (!isLt4M) {
-        this.showError('File size must be less than 4MB.');
+
+      if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+        this.showError('The uploaded image format is incorrect. Please upload images in JPEG/PNG/WEBP/GIF format!');
+        return false;
       }
-      return isLt4M;
+
+      if (!isLt4M) {
+        this.showError('The size of the uploaded avatar image cannot exceed 4MB!');
+        return false;
+      }
+      return true;
     },
-    handleImageUpload(file) {
-      this.form.image = file.raw;
+    handleSuccess(response, file, fileList) {
+      console.log('Upload success', response);
+      this.form.image = response.data
+    },
+    customRequest(options) {
+      console.log('customRequest', options);
+      const formData = new FormData();
+      formData.append('file', options.file);
+      // axios.post('https://tmp-file.aigic.ai/api/v1/upload?expires=1800&type=image/png', formData, {
+      axios.post('https://aon.dexian.io/upload/image', formData, {  
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(response => {
+        if (response.data) {
+          return response.data;
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      }).then(responseData => {
+        options.onSuccess(responseData, options.file, options.fileList);
+      }).catch(error => {
+        console.error('Upload failed', error);
+        this.showError('Failed to upload image.');
+      });
     },
     showError(message) {
       ElMessage({
@@ -207,18 +240,18 @@ export default {
         createForm.token = token;
 
         const tokenData = {
-          name: this.form.name | '',
-          symbol: this.form.ticker | '',
-          image: this.form.image | "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
+          name: this.form.name || '',
+          symbol: this.form.ticker || '',
+          image: this.form.image || "http://gips3.baidu.com/it/u=119870705,2790914505&fm=3028&app=3028&f=JPEG&fmt=auto?w=1280&h=720",
           contract: token,
           tags: '',
-          description: this.form.description | '',
+          description: this.form.description || '',
           totalSupply: showingInitEth,
-          website: this.form.website | '',
-          tg: this.form.telegram | '',
-          x: this.form.twitter | '',
-          Fee: this.form.fee | '0.04',
-          InitialBuy: this.form.initialBuyAmount | '',
+          website: this.form.website || '',
+          tg: this.form.telegram || '',
+          x: this.form.twitter || '',
+          Fee: this.form.fee || '0.04',
+          InitialBuy: this.form.initialBuyAmount || '',
           createdBy: accStore.ethconnectAddress
         };
         try {
@@ -433,5 +466,13 @@ export default {
   position: relative;
   z-index: 1;
   background-color: inherit;
+}
+
+.uploaded-image {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  margin-top: 20px;
+  border-radius: 10px;
 }
 </style>

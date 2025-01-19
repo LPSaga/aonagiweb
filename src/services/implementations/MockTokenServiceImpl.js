@@ -59,4 +59,19 @@ export class MockTokenServiceImpl {
       ]
     ]);
   }
+
+  async getMyToken(token) {
+    console.log(`Mock getmyToken called with token: ${token}`);
+    return Promise.resolve(mockTokenDetail);
+  }
+
+  async getDigest24h(token) {
+    console.log(`Mock getDigest24h called with token: ${token}`);
+    return Promise.resolve(mockTokenDetail);
+  }
+
+  async uploadImage(file) {
+    console.log(`Mock uploadImage called with file: ${file}`);
+    return Promise.resolve({ code: 0, msg: 'success' });
+  }
 }

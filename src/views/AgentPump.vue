@@ -18,7 +18,7 @@
                 <div class="stat">
                   <span class="label">Price</span>
                   <span class="value">{{ token.price ?? '0' }}</span>
-                  <span :class="['change', token.aonFee >= 0 ? 'positive' : 'negative']">
+                  <span :class="['change', token.percentage >= 0 ? 'positive' : 'negative']">
                     {{ token.percentage }}%
                   </span>
                 </div>
@@ -52,6 +52,7 @@ export default {
           try {
             const response = await TokenService.getDigest24h(token.contract);
             token.percentage = response.data.percentage;
+            token.price = response.data.price;
           } catch (error) {
             console.error(`Failed to fetch digest for token ${token.contract}:`, error);
           }

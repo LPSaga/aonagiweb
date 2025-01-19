@@ -38,7 +38,7 @@ const BondingCurveSupply = ref(800000000)
 
 watch(() => showingInitAmount.value, (val) => {
   if (val && val > 0) {
-    if (val > BondingCurveSupply) {
+    if (val > BondingCurveSupply.value) {
       showMaxAmount.value = true
       createForm.initAmount = 0n
       createForm.initEth = 0n
@@ -60,7 +60,7 @@ watch(() => showingInitAmount.value, (val) => {
 
 const create = async () => {
     console.log('Creating')
-  const account = accStore.getAccountInfo;
+  // const account = accStore.getAccountInfo;
   showTickUsed.value = false;
   showInputTicker.value = false;
   if (createForm.ticker.length == 0) {

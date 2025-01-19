@@ -1,3 +1,5 @@
+declare const window: any;
+
 import { ethers } from 'ethers';
 import { setupNetwork } from './web3';
 import { MetaMaskSDK } from '@metamask/sdk';

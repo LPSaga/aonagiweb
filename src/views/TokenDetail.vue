@@ -83,36 +83,6 @@
         </div>
         
         <div class="right-section">
-          <!-- <div class="related-apps">
-            <h3 style="color: #FFFFFF;">Related Agents</h3>
-            <div class="apps-container">
-              <div class="app-item">
-                <div class="app-icon">
-                  <img src="@/assets/app1.jpg" alt="ChatGPT Pro" />
-                </div>
-                <div class="app-info">
-                  <div class="app-name">ChatGPT Pro</div>
-                </div>
-              </div>
-              <div class="app-item">
-                <div class="app-icon">
-                  <img src="@/assets/app2.jpg" alt="Midjourney Plus" />
-                </div>
-                <div class="app-info">
-                  <div class="app-name">Midjourney Plus</div>
-                </div>
-              </div>
-              <div class="app-item">
-                <div class="app-icon">
-                  <img src="@/assets/app3.jpg" alt="Claude Assistant" />
-                </div>
-                <div class="app-info">
-                  <div class="app-name">Claude Assistant</div>
-                </div>
-              </div>
-            </div>
-          </div> -->
-
           <div class="trade-form">
             <div class="trade-tabs">
               <button 
@@ -146,6 +116,21 @@
             <button class="connect-wallet" @click="buyOrSellToken(inputEth)"> {{ activeBuyTab === 'buy' ? 'Buy' :'Sell'}}</button>
           </div>
 
+          <div class="related-apps" v-if="relatedApps.length > 0">
+            <h3 style="color: #FFFFFF;">Related Agents</h3>
+            <div class="apps-container" v-for="app in relatedApps" :key="app.id">
+              <div class="app-item" v-on:click="goToAppDetail(app)">
+                <div class="app-icon">
+                  <img :src="app.appIcon" alt="app.appKey" />
+                </div>
+                <div class="app-info">
+                  <div class="app-name">{{ app.appTitle }}</div>
+                </div>
+              </div>              
+            </div>
+          </div>
+
+          
         </div>
       </div>
 
@@ -272,6 +257,7 @@ export default {
       maxSlippage: 5,
       inputEth: '',
       digest24h: '',
+      relatedApps: []
     }
   },
   created() {
@@ -381,12 +367,14 @@ export default {
       try {
           CommentService.postComment({
             token: this.contract,
-            comment: this.newComment,
+            content: this.newComment,
             createdBy: accStore.ethconnectAddress
           }).then(response => {
-            if (response.status === 'success') {
+            if (response.code === 0) {
               this.newComment = '';
               this.fetchComments();
+            } else {
+              this.showError(response.msg | 'Failed to add comment');
             }
           });
         } catch (error) {
@@ -502,14 +490,7 @@ export default {
       try {
         const response = await TokenService.getRelatedTokens(this.contract);
         console.log('relatedTokens:', response);
-      } catch (error) {
-        console.error('Failed to add agent id:', error);
-      }
-    },
-    async tokenAddAppid() {
-      try {
-        const response = await TokenService.addAgentId({'agentAppId':['1']});
-        console.log('tokenAddAppid:', response);
+        this.relatedApps = response.data;
       } catch (error) {
         console.error('Failed to add agent id:', error);
       }
@@ -523,6 +504,9 @@ export default {
         console.error('Failed to add agent id:', error);
       }
     },
+    goToAppDetail(app) {
+      window.open(app.appUrl, '_blank');
+    }
   },
   mounted() {
     this.fetchTokenDetail().then(() => {
@@ -531,8 +515,7 @@ export default {
       this.fetchTopHolders();
       this.fetchTradingHistory();
       this.tokenDigest24h();
-      // this.relatedTokens();
-      // this.tokenAddAppid();
+      this.relatedTokens();
     });
 
   }

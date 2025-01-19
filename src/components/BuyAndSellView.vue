@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, onActivated, onMounted, defineProps, provide, ref, watch, reactive} from "vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
-import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
+import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee,
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseEth, getSellAmountUseToken
  } from '@/tools/aon'
@@ -30,8 +30,8 @@ const props = defineProps<{token: TokenHoldingList}>()
 const token = reactive<UserTokenInfo>({
   contract: '',
   supply: 0n,
-  balance: 0n,
-  ethBalance: 0n,
+  balance: 0,
+  ethBalance: 0,
   listed: false
 })
 
@@ -87,7 +87,7 @@ async function confirm() {
     }
     // check eth balance
     if (ethBalance.value < payEth.value) {
-      notify({message: 'Insufficient ETH balance'})
+      // notify({message: 'Insufficient ETH balance'})
       return
     }
   }else {
@@ -97,7 +97,7 @@ async function confirm() {
     };
     // check token balance
     if (tokenBalance.value < sellAmount.value) {
-      notify({message: 'Insufficient token balance'})
+      // notify({message: 'Insufficient token balance'})
       return
     }
   }
