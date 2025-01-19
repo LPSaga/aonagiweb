@@ -135,7 +135,7 @@ const accStore = useAccountStore();
 //   initAmount?: bigint // this is token amount
 //   initEth?: bigint // this is eth amount
 // }
-const createForm = reactive<any> ({
+const createForm = reactive({
     name: "",
     ticker: "",
     token: "",
