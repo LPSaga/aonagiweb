@@ -212,7 +212,7 @@
     <el-dialog v-model="showChoseWallet"
         modal-class="overlay-transparent"
         class="max-w-[20%] rounded-[20px]"
-        width="20" :show-close="false" align-center destroy-on-close>
+        width="240px" :show-close="false" align-center destroy-on-close>
       <ChoseWallet @chosedWallet="showChoseWallet=false"/>
   </el-dialog>
   </div>

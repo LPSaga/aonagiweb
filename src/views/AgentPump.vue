@@ -38,8 +38,8 @@
 
   <el-dialog v-model="showChoseWallet"
         modal-class="overlay-white"
-        class="max-w-[400px] rounded-[20px]"
-        width="50%" :show-close="false" align-center destroy-on-close>
+        class="max-w-[20%] rounded-[20px]"
+        width="240px" :show-close="false" align-center destroy-on-close>
       <ChoseWallet @chosedWallet="showChoseWallet=false"/>
   </el-dialog>
 </template>
