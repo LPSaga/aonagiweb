@@ -48,9 +48,11 @@
 
       <div class="trading-section">
         <div class="left-section">
-          <div class="chart" style="width: 600px; height: 400px;">
+
+          <div class="chart" style="width: 600px; height: 600px;">
             <h3 style="color: #FFFFFF;">Trading Chart</h3>
-            <canvas id="klineChart"></canvas>
+            <div id="chart" style="width:540px;height:500px"></div>
+            <!-- <canvas id="klineChart"></canvas> -->
           </div>
 
           <div class="bonding-curve">
@@ -208,9 +210,9 @@
     </div>
 
     <el-dialog v-model="showChoseWallet"
-        modal-class="overlay-white"
-        class="max-w-[400px] rounded-[20px]"
-        width="30%" :show-close="false" align-center destroy-on-close>
+        modal-class="overlay-transparent"
+        class="max-w-[20%] rounded-[20px]"
+        width="20" :show-close="false" align-center destroy-on-close>
       <ChoseWallet @chosedWallet="showChoseWallet=false"/>
   </el-dialog>
   </div>
@@ -222,7 +224,7 @@ Chart.register(...registerables)
 import { CommentService } from '../services/commentService';
 import { TokenService } from '../services/tokenService';
 import BuyAndSellView from '@/components/BuyAndSellView.vue'
-import {computed, onActivated, onMounted, defineProps, provide, ref, watch, reactive} from "vue";
+import {computed, onActivated, onMounted, defineProps, provide, ref, watch, reactive, onUnmounted} from "vue";
 import { useAccountStore, EthWalletState } from '@/stores/web3'
 import { ethers } from "ethers";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee,
@@ -232,6 +234,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee,
 import { formatAmount } from "@/tools/helper";
 import { ElMessage } from 'element-plus'
 import ChoseWallet from '@/components/ChoseWallet.vue'
+import { dispose, init } from "klinecharts";
 
 // const showTrading = ref(false);
 const accStore = useAccountStore();
@@ -260,7 +263,7 @@ export default {
       inputEth: '',
       digest24h: '',
       relatedApps: [],
-      showChoseWallet:false
+      showChoseWallet:false,
     }
   },
   created() {
@@ -427,59 +430,48 @@ export default {
       }
     },
     renderKlineChart() {
-      const ctx = document.getElementById('klineChart').getContext('2d');
-       if (!ctx) return
-      const data = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [{
-          label: 'API Calls',
-          data: this.klineData[0],
-          fill: true,
-          borderColor: '#10b981',
-          fill: true,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          tension: 1
-        }]
-      }
+      const chartContainer = document.getElementById('chart');
+      if (chartContainer) {
+        const chart = init('chart');
+        // 数据结构说明
+        // 1499040000000, // Kline open time
+        // "0.01634790", // Open price
+        // "0.80000000", // High price
+        // "0.01575800", // Low price
+        // "0.01577100", // Close price
+        // "148976.11427815", // Volume
+        // 1499644799999, // Kline Close time
+        // "2434.19055334", // Quote asset volume
+        // 308, // Number of trades
+        // "1756.87402397", // Taker buy base asset volume
+        // "28.46694368" // Taker buy quote asset volume
 
-      new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              },
-              ticks: {
-                color: '#888',
-                callback: function(value) {
-                  if (value >= 1000000) return (value/1000000).toFixed(1) + 'M'
-                  if (value >= 1000) return (value/1000).toFixed(0) + 'K'
-                  return value
-                }
-              }
-            },
-            x: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              },
-              ticks: {
-                color: '#888'
-              }
-            }
-          }
-        }
-      })
+        // !! TODO ： 后端数据过少 显示的数据不全，UI也需要调整
+        // const chartData = this.klineData.map(data => ({
+        //   close: data[4] * 1000000000,
+        //   high: data[2]* 1000000000,
+        //   low: data[3]* 1000000000,
+        //   open: data[1]* 1000000000,
+        //   timestamp: data[0] * 1000,
+        //   volume: data[5] * 1000000000
+        // }));
+
+        // chart.applyNewData(chartData);
+        chart.applyNewData([
+          { close: 4976.16, high: 4977.99, low: 4970.12, open: 4972.89, timestamp: 1587660000000, volume: 204 },
+          { close: 4977.33, high: 4979.94, low: 4971.34, open: 4973.20, timestamp: 1587660060000, volume: 194 },
+          { close: 4977.93, high: 4977.93, low: 4974.20, open: 4976.53, timestamp: 1587660120000, volume: 197 },
+          { close: 4966.77, high: 4968.53, low: 4962.20, open: 4963.88, timestamp: 1587660180000, volume: 28 },
+          { close: 4961.56, high: 4972.61, low: 4961.28, open: 4961.28, timestamp: 1587660240000, volume: 184 },
+          { close: 4964.19, high: 4964.74, low: 4961.42, open: 4961.64, timestamp: 1587660300000, volume: 191 },
+          { close: 4968.93, high: 4972.70, low: 4964.55, open: 4966.96, timestamp: 1587660360000, volume: 105 },
+          { close: 4979.31, high: 4979.61, low: 4973.99, open: 4977.06, timestamp: 1587660420000, volume: 35 },
+          { close: 4977.02, high: 4981.66, low: 4975.14, open: 4981.66, timestamp: 1587660480000, volume: 135 },
+          { close: 4985.09, high: 4988.62, low: 4980.30, open: 4986.72, timestamp: 1587660540000, volume: 76 }
+        ])
+      } else {
+        console.error('Chart container not found');
+      }
     },
     async fetchTradingHistory() {
       console.log('fetchTradingHistory');
@@ -521,7 +513,7 @@ export default {
       window.open(app.appUrl, '_blank');
     }
   },
-  mounted() {
+  mounted() {    
     this.fetchTokenDetail().then(() => {
       this.fetchKlineData();
       this.fetchComments();
@@ -530,7 +522,9 @@ export default {
       this.tokenDigest24h();
       this.relatedTokens();
     });
-
+  },
+  onUnmounted() {
+    dispose('chart')
   }
 }
 </script>
@@ -722,7 +716,7 @@ export default {
 
     .left-section {
       .chart, .related-apps {
-        background: rgba(255, 255, 255, 0.05);
+        background: #481696;
         border-radius: 15px;
         padding: 20px;
         margin-bottom: 30px;
