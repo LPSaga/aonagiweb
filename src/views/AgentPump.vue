@@ -3,7 +3,9 @@
     <div class="content-wrapper">
       <div class="header-section">
         <h1>Popular AI Agents</h1>
-        <router-link to="/launch" class="create-button">Create New AI Agent</router-link>
+        <button class="create-button" @click="accStore.ethConnectState == EthWalletState.Connected ? $router.push('/launch') : showChoseWallet = true">
+          Create New AI Agent
+        </button>
       </div>
       <div class="token-grid">
         <div class="token-card" v-for="(token, index) in tokens" :key="index">
@@ -18,7 +20,7 @@
                 <div class="stat">
                   <span class="label">Price</span>
                   <span class="value">{{ token.price ?? '0' }}</span>
-                  <span :class="['change', token.percentage >= 0 ? 'positive' : 'negative']">
+                  <span v-if="token.percentage" :class="['change', token.percentage >= 0 ? 'positive' : 'negative']">
                     {{ token.percentage }}%
                   </span>
                 </div>
@@ -33,48 +35,50 @@
       </div>
     </div>
   </div>
+
+  <el-dialog v-model="showChoseWallet"
+        modal-class="overlay-white"
+        class="max-w-[400px] rounded-[20px]"
+        width="50%" :show-close="false" align-center destroy-on-close>
+      <ChoseWallet @chosedWallet="showChoseWallet=false"/>
+  </el-dialog>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
 import { TokenService } from '../services/tokenService';
+import ChoseWallet from '@/components/ChoseWallet.vue'
+import { useAccountStore, EthWalletState } from '@/stores/web3'
+import { useRouter } from 'vue-router';
 
-export default {
-  name: 'Home',
-  data() {
-    return {
-      tokens: []
-    };
-  },
-  created() {
-    TokenService.getTokenList()
-      .then(async tokenList => {
-        for (let token of tokenList.data) {
-          try {
-            const response = await TokenService.getDigest24h(token.contract);
-            token.percentage = response.data.percentage;
-            token.price = response.data.price;
-          } catch (error) {
-            console.error(`Failed to fetch digest for token ${token.contract}:`, error);
-          }
-        }
-        this.tokens = tokenList.data;
-      })
-      .catch(error => {
-        console.error('Error fetching token list:', error);
-      });
-  },
-  methods: {
-    async tokenDigest24h() {
-      try {
-        const response = await TokenService.getDigest24h(this.contract);
-        this.digest24h = response.data;
-        console.log('tokenDigest24h:', response);
-      } catch (error) {
-        console.error('Failed to add agent id:', error);
-      }
-    },
+const accStore = useAccountStore();
+const showChoseWallet = ref(false);
+const tokens = ref([]);
+const $router = useRouter();
+
+onMounted(async () => {
+  const promises = [];
+  const tokenList = await TokenService.getTokenList();
+  tokens.value = tokenList.data;
+  for (let token of tokenList.data) {
+    promises.push(tokenDigest24h(token.contract));
   }
-};
+  const responses = await Promise.all(promises);
+  responses.forEach((response, index) => {
+    tokens.value[index].percentage = parseFloat(response.percentage).toFixed(2);
+    tokens.value[index].price = response.price;
+  });
+});
+
+async function tokenDigest24h(contract) {
+  try {
+    const response = await TokenService.getDigest24h(contract);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to add agent id:', error);
+    throw error;
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -102,15 +106,17 @@ export default {
         margin: 0;
       }
 
-      .create-button {
-        padding: 12px 24px;
-        background: linear-gradient(45deg, #6366f1, #a855f7);
-        color: #fff;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 500;
-        transition: opacity 0.3s;
 
+      .create-button {
+        background: linear-gradient(45deg, #6366f1, #a855f7);
+        color: #FFFFFF;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
         &:hover {
           opacity: 0.9;
         }

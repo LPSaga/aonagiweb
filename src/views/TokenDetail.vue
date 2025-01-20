@@ -38,7 +38,7 @@
         </div>
         <div class="stat-item">
           <div class="label" style="color: #8F85B8;">Virtual Liquidity</div>
-          <div class="value" style="color: #FFFFFF;">$0k</div>
+          <div class="value" style="color: #FFFFFF;">$0</div>
         </div>
         <div class="stat-item" v-if="digest24h">
           <div class="label" style="color: #8F85B8;">24H Volume</div>
@@ -55,12 +55,12 @@
 
           <div class="bonding-curve">
             <div class="curve-header">
-              <h3 style="color: #FFFFFF;">Bonding Curve Progress: 0.49%</h3>
+              <h3 style="color: #FFFFFF;">Bonding Curve Progress: {{ (digest24h.price / 10000000).toFixed(16)}}%</h3>
               <div class="info-tooltip">ⓘ</div>
             </div>
             <div class="curve-info">
-              <p>There are <span class="highlight">784,543,856.88 LLAMA</span> still available for sale in the bonding curve and there are <span class="highlight">512.88 ETH</span> in the bonding curve.</p>
-              <p>When the market cap reaches $ <span class="highlight">149,206.86</span> all the liquidity from the bonding curve will be deposited into AonSwap and burned. Progression increases as the price goes up.</p>
+              <p>There are <span class="highlight">1000000000 LLAMA</span> still available for sale in the bonding curve and there are <span class="highlight">{{ digest24h.price }} ETH</span> in the bonding curve.</p>
+              <p>When the market cap reaches $ <span class="highlight">{{ digest24h.price * 1000000000 }}</span> all the liquidity from the bonding curve will be deposited into AonSwap and burned. Progression increases as the price goes up.</p>
             </div>
           </div>
 
@@ -207,12 +207,12 @@
 
     </div>
 
-    <el-dialog v-model="showTrading"
+    <el-dialog v-model="showChoseWallet"
         modal-class="overlay-white"
         class="max-w-[400px] rounded-[20px]"
-        width="90%" :show-close="true" align-center destroy-on-close>
-        <BuyAndSellView :token="userTokenInfo" />
-      </el-dialog>
+        width="50%" :show-close="false" align-center destroy-on-close>
+      <ChoseWallet @chosedWallet="showChoseWallet=false"/>
+  </el-dialog>
   </div>
 </template>
 
@@ -257,7 +257,8 @@ export default {
       maxSlippage: 5,
       inputEth: '',
       digest24h: '',
-      relatedApps: []
+      relatedApps: [],
+      showChoseWallet:false
     }
   },
   created() {
@@ -291,6 +292,16 @@ export default {
       }
     },
     async buyOrSellToken(val) {
+      if (!ethers.isAddress(accStore.ethconnectAddress)) {
+        this.showChoseWallet = true
+        return
+      }
+
+      if (val <= 0) {
+        this.showError('Input amount must be greater than 0')
+        return
+      }
+      
       try{
         await this.updateUserTokenInfo();
         console.log('buyOrSellToken:', this.userTokenInfo);              

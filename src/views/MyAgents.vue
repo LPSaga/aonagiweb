@@ -28,13 +28,15 @@
                 </div>
               </div>
               <div class="linked-apps">
-                <div class="app-list" v-if="agent.linkedApps && agent.linkedApps.length > 0">
-                  <div class="app-item" v-for="(app, appIndex) in agent.linkedApps" :key="appIndex">
-                    {{ app }}
-                    <span class="remove-app" @click.prevent="removeLinkedApp(index, appIndex)">×</span>
+                <div class="app-list" v-if="agent.apps && agent.apps.length > 0">
+                  <div class="app-item" v-for="(app, appIndex) in agent.apps" :key="appIndex">
+                    <button class="link-app-btn" @click.prevent="goToAppDetail(app)">
+                      {{ app.appTitle }}
+                    </button>
+                    <!-- <span class="remove-app" @click.prevent="removeLinkedApp(index, appIndex)">×</span> -->
                   </div>
                 </div>
-                <button class="link-app-btn" @click.prevent="showLinkAppDialog(index)">
+                <button v-if="!agent.apps || agent.apps.length ===0 " class="link-app-btn" @click.prevent="showLinkAppDialog(index)">
                   + Link App
                 </button>
               </div>
@@ -87,10 +89,30 @@ export default {
     this.fetchMyTokenData();
   },
   methods: {
+    async relatedTokens(contract) {
+      try {
+        const response = await TokenService.getRelatedTokens(contract);
+        return response.data;
+      } catch (error) {
+        console.error('Failed to add agent id:', error);
+        throw error;
+      }
+    },
     fetchMyTokenData() {
-      TokenService.getMyToken('0xc8f7b5d8e1cca8475a9677afde15840c70d77190').then(response => {
+      const promises = [];
+      TokenService.getMyToken(accStore.ethconnectAddress).then(response => {
         console.log('getMyToken response', response)
         this.myAgents = response.data;
+        for (let token of response.data) {
+          console.log('token', token);
+          promises.push(this.relatedTokens(token.contract));
+        }
+        return Promise.all(promises);
+      })
+      .then(responses => {
+        responses.forEach((response, index) => {
+          this.myAgents[index].apps = response;
+        });
       })
       .catch(error => {
         console.error('Error fetching token list:', error);
@@ -124,6 +146,9 @@ export default {
         console.error('Failed to add agent id:', error);
       }
     },
+    goToAppDetail(app) {
+      window.open(app.appUrl, '_blank');
+    }
   }
 }
 </script>

@@ -127,14 +127,7 @@ import { ElMessage, ElUpload } from 'element-plus'
 import axios from 'axios';
 
 const accStore = useAccountStore();
-// type CreateFormData = {
-//   name: string,
-//   ticker: string,
-//   token: string,
-//   createHash?: string,
-//   initAmount?: bigint // this is token amount
-//   initEth?: bigint // this is eth amount
-// }
+
 const createForm = reactive({
     name: "",
     ticker: "",

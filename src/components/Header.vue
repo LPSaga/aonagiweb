@@ -6,7 +6,6 @@ import ChoseWallet from '@/components/ChoseWallet.vue'
 import CreateCoin from '@/components/CreateCoin.vue'
 import TokenList from '@/components/TokenList.vue'
 import { useAccountStore, EthWalletState } from '@/stores/web3'
-
 const isMenuOpen = ref(false)
 const isDropdownOpen = ref(false)
 
@@ -105,8 +104,8 @@ const closeMenu = () => {
 
   <el-dialog v-model="showChoseWallet"
         modal-class="overlay-white"
-        class="max-w-[500px] rounded-[20px]"
-        width="90%" :show-close="false" align-center destroy-on-close>
+        class="max-w-[400px] rounded-[20px]"
+        width="50%" :show-close="false" align-center destroy-on-close>
       <ChoseWallet @chosedWallet="showChoseWallet=false"/>
   </el-dialog>
   

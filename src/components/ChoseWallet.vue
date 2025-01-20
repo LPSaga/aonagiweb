@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getProviders, setActiveProviderDetail, setMetaMaskSDK } from "@/tools/wallets";
+import { getProviders, setActiveProviderDetail, setMetaMaskSDK, closeProvider } from "@/tools/wallets";
 import { computed, ref } from "vue";
 
 const loading = ref(false);
@@ -22,37 +22,63 @@ async function connectMetaMask() {
 </script>
 
 <template>
-  <div class="px-1 flex flex-col gap-y-2">
-      <div class="flex flex-col gap-2 pt-4 pb-6" v-if="providers.length > 0">
-        <button
-            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
-                   flex justify-center items-center gap-10px
-                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
-            v-for="wallet of providers"
-            :key="wallet.info.uuid"
-            :disabled="loading"
-            @click="onSelectWalletMeta(wallet)"
-        >
-          <img class="w-8 h-8" :src="wallet.info.icon" alt="" />
-          <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
-            {{ wallet.info.name }}
-          </span>
-        </button>
-      </div>
-      <div class="flex flex-col gap-2 pt-4 pb-6" v-else>
-        <button
-            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
-                   flex justify-center items-center gap-10px
-                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
-            :disabled="loading"
-            @click="connectMetaMask()"
-        >
-          <img class="h-full" src="https://docs.metamask.io/img/metamask-logo.svg" alt="" />
-          <!-- <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
-            MetaMask
-          </span> -->
-        </button>
-      </div>
+  <div class="wallet-container">
+    <h2 class="text-xl font-bold text-black">{{ providers.length > 0 ? 'Chose Wallet' : 'connect wallet' }}</h2>
+    <div style="margin: 20px 20px;">
+      <!-- <p class="text-base text-gray-500 mb-5">{{ providers.length > 0 ? 'Chose wallet' : 'connect wallet' }} </p> -->
     </div>
-  </template>
-  
+
+    <div class="flex flex-col gap-2 pt-4 pb-6" v-if="providers.length > 0">
+      <button
+          class="wallet-button"
+          v-for="wallet of providers"
+          :key="wallet.info.uuid"
+          :disabled="loading"
+          @click="onSelectWalletMeta(wallet)"
+      >
+        <img class="w-8 h-8" :src="wallet.info.icon" alt="" />
+        <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
+          {{ wallet.info.name }}
+        </span>
+      </button>
+    </div>
+    <div class="flex flex-col gap-2 pt-4 pb-6" v-else>
+      <button
+          class="wallet-button"
+          :disabled="loading"
+          @click="connectMetaMask()"
+      >
+        <img class="h-full" src="https://docs.metamask.io/img/metamask-logo.svg" alt="" />
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.wallet-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.wallet-button {
+  width: 100%;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+  padding: 10px;
+  height: 50px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.wallet-button:hover {
+  border-color: #ff7f50;
+  background-color: #ff7f50;
+  color: white;
+}
+</style>
