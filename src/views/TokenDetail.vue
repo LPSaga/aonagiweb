@@ -210,7 +210,7 @@
     <el-dialog v-model="showChoseWallet"
         modal-class="overlay-white"
         class="max-w-[400px] rounded-[20px]"
-        width="50%" :show-close="false" align-center destroy-on-close>
+        width="30%" :show-close="false" align-center destroy-on-close>
       <ChoseWallet @chosedWallet="showChoseWallet=false"/>
   </el-dialog>
   </div>
@@ -231,6 +231,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee,
  } from '@/tools/aon'
 import { formatAmount } from "@/tools/helper";
 import { ElMessage } from 'element-plus'
+import ChoseWallet from '@/components/ChoseWallet.vue'
 
 // const showTrading = ref(false);
 const accStore = useAccountStore();
@@ -239,7 +240,8 @@ export default {
   name: 'TokenDetail',
   components: {
     BuyAndSellView,
-    ElMessage
+    ElMessage,
+    ChoseWallet
   },
   data() {
     return {
